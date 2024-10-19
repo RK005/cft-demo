@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Root stack
+Resources:
+  sshKeyPair:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "./key-pair/ltidemo.pub"
+  devVpc:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "./vpc/vpc.yaml"
+  internetGateway:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - devVpc
+    Properties:
+      TemplateURL: "./vpc/internet-gateway.yaml"
+      Parameters:
+        vpcId:
+          Fn::GetAtt:
+            - devVpc
+            - Outputs.vpcId
+  routeTable:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - devVpc
+      - internetGateway
+    Properties:
+      TemplateURL: "./vpc/route-table.yaml"
+      Parameters:
+        vpcId:
+          Fn::GetAtt:
+            - devVpc
+            - Outputs.vpcId
+        internetGatewayId:
+          Fn::GetAtt:
+            - internetGateway
+            - Outputs.internetGatewayId
+  devPublicSubnet:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - devVpc
+      - routeTable
+    Properties:
+      TemplateURL: "./vpc/subnet.yaml"
+      Parameters:
+        vpcId:
+          Fn::GetAtt:
+            - devVpc
+            - Outputs.vpcId
+        publicSubnetRouteTableId:
+          Fn::GetAtt:
+            - routeTable
+            - Outputs.publicSubnetRouteTableId
+        ipv6CidrBlock:
+          Fn::GetAtt:
+            - devVpc
+            - Outputs.ipv6CidrBlock
+  ec2SecurityGroup:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - devVpc
+    Properties:
+      TemplateURL: "./security-group/main.yaml"
+      Parameters:
+        vpcId:
+          Fn::GetAtt:
+            - devVpc
+            - Outputs.vpcId
+  ec2Instance:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - sshKeyPair
+      - devVpc
+      - internetGateway
+      - routeTable
+      - devPublicSubnet
+      - ec2SecurityGroup
+    Properties:
+      TemplateURL: "./ec2/main.yaml"
+      Parameters:
+        securityGroupId:
+          Fn::GetAtt:
+            - ec2SecurityGroup
+            - Outputs.securityGroupId
+        publicSubnetId:
+          Fn::GetAtt:
+            - devPublicSubnet
+            - Outputs.publicSubnetId

@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VPC for Demo Purpose
+Resources:
+  devVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 192.168.0.0/16
+      EnableDnsSupport: "true"
+      EnableDnsHostnames: "true"
+      Tags:
+        - Key: Name
+          Value: lti-demo
+        - Key: Env
+          Value: Demo
+  # ipv6CidrBlock:
+  #   Type: AWS::EC2::VPCCidrBlock
+  #   Properties:
+  #     VpcId: !Ref devVpc
+  #     AmazonProvidedIpv6CidrBlock: true
+Outputs:
+  vpcId:
+    Value: !Ref devVpc
+    Export:
+      Name: vpcId
+  # ipv6CidrBlockId:
+  #   Value: !Ref ipv6CidrBlock
+  #   Export:
+  #     Name: ipv6CidrBlockId
+  # ipv6CidrBlock:
+  #   Value: !Select [ 0, !Cidr [ !Select [ 0, !GetAtt devVpc.Ipv6CidrBlocks], 1, 64 ]]
+  #   Export:
+  #     Name: ipv6CidrBlock
